@@ -285,6 +285,8 @@ func (r *Replica) clientListener(conn net.Conn) {
 		switch uint8(msgType) {
 
 		case genericsmrproto.PROPOSE:
+
+			//currently only this is supported
 			prop := new(genericsmrproto.Propose)
 			if err = prop.Unmarshal(reader); err != nil {
 				break

@@ -14,4 +14,4 @@ bin/paxos-server -port 7070 >server0.log 2>&1 &
 bin/paxos-server -port 7071 >server1.log 2>&1 &
 bin/paxos-server -port 7072 >server2.log 2>&1 &
 sleep 10
-bin/paxos-client >client.log 2>&1
+bin/paxos-client >client.log 2>&1 &
