@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"dlog"
 	"genericsmrproto"
 	"log"
 	"masterproto"
@@ -55,6 +56,8 @@ func main() {
 }
 
 func (master *Master) run() {
+
+	//xs: wait for all node connected.
 	for true {
 		master.lock.Lock()
 		if len(master.nodeList) == master.N {
@@ -98,6 +101,7 @@ func (master *Master) run() {
 		if !new_leader {
 			continue
 		}
+		//xs: notify
 		for i, new_master := range master.nodes {
 			if master.alive[i] {
 				err := new_master.Call("Replica.BeTheLeader", new(genericsmrproto.BeTheLeaderArgs), new(genericsmrproto.BeTheLeaderReply))
@@ -121,13 +125,21 @@ func (master *Master) Register(args *masterproto.RegisterArgs, reply *masterprot
 
 	addrPort := fmt.Sprintf("%s:%d", args.Addr, args.Port)
 
+	dlog.Printf("received register request, ap = %s", addrPort)
+
+	for i, ap := range master.nodeList {
+		dlog.Printf("Current node list [%d]: %s", i, ap);
+	}
+
+
+
 	for i, ap := range master.nodeList {
 		if addrPort == ap {
 			index = i
 			break
 		}
 	}
-
+	//xs: a new node registered
 	if index == nlen {
 		master.nodeList = master.nodeList[0 : nlen+1]
 		master.nodeList[nlen] = addrPort
@@ -137,7 +149,7 @@ func (master *Master) Register(args *masterproto.RegisterArgs, reply *masterprot
 		master.portList[nlen] = args.Port
 		nlen++
 	}
-
+	//If all nodes registered, reply ready.
 	if nlen == master.N {
 		reply.Ready = true
 		reply.ReplicaId = index

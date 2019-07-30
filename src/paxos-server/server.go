@@ -20,6 +20,8 @@ import (
 )
 
 var portnum *int = flag.Int("port", 7070, "Port # to listen on. Defaults to 7070")
+//xs: the port for RPC is 1000 larger than that of listening for requests.
+
 var masterAddr *string = flag.String("maddr", "", "Master address. Defaults to localhost.")
 var masterPort *int = flag.Int("mport", 7087, "Master port.  Defaults to 7087.")
 var myAddr *string = flag.String("addr", "", "Server address (this machine). Defaults to localhost.")
@@ -83,6 +85,7 @@ func main() {
 	http.Serve(l, nil)
 }
 
+//xs:
 func registerWithMaster(masterAddr string) (int, []string) {
 	args := &masterproto.RegisterArgs{*myAddr, *portnum}
 	var reply masterproto.RegisterReply
