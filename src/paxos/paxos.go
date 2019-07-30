@@ -159,7 +159,7 @@ var clockChan chan bool
 
 func (r *Replica) clock() {
 	for !r.Shutdown {
-		time.Sleep(1000 * 1000 * 5)
+		time.Sleep(5 * time.Millisecond);
 		clockChan <- true
 	}
 }
@@ -193,6 +193,7 @@ func (r *Replica) run() {
 		select {
 
 		case <-clockChan:
+			//xs: reset the channel in 5ms
 			//activate the new proposals channel
 			onOffProposeChan = r.ProposeChan
 			break
@@ -203,6 +204,8 @@ func (r *Replica) run() {
 			r.handlePropose(propose)
 			//deactivate the new proposals channel to prioritize the handling of protocol messages
 			onOffProposeChan = nil
+			//xs: interesting, relinquish the Chan to allow other message to come,
+			//xs: 5s later to handle another client proposal
 			break
 
 		case prepareS := <-r.prepareChan:
@@ -633,6 +636,9 @@ func (r *Replica) handleAcceptReply(areply *paxosproto.AcceptReply) {
 		if inst.lb.acceptOKs+1 > r.N>>1 {
 			inst = r.instanceSpace[areply.Instance]
 			inst.status = COMMITTED
+			dlog.Printf("Committed request %d", areply.Instance)
+
+
 			if inst.lb.clientProposals != nil && !r.Dreply {
 				// give client the all clear
 				for i := 0; i < len(inst.cmds); i++ {
