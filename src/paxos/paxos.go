@@ -137,6 +137,8 @@ func (r *Replica) sync() {
 /* RPC to be called by master */
 
 func (r *Replica) BeTheLeader(args *genericsmrproto.BeTheLeaderArgs, reply *genericsmrproto.BeTheLeaderReply) error {
+	dlog.Printf("[DEBUG]: I am the leader");
+
 	r.IsLeader = true
 	return nil
 }
@@ -174,6 +176,7 @@ func (r *Replica) run() {
 		go r.executeCommands()
 	}
 
+	//xs: By default, index 0 is the first leader
 	if r.Id == 0 {
 		r.IsLeader = true
 	}

@@ -35,6 +35,8 @@ var N int
 var successful []int
 
 var rarray []int
+//Replica array??
+
 var rsp []bool
 
 func main() {
@@ -65,13 +67,16 @@ func main() {
 	readers := make([]*bufio.Reader, N)
 	writers := make([]*bufio.Writer, N)
 
+	//Replica arrary: each round of request send to which replica.
 	rarray = make([]int, *reqsNb / *rounds + *eps)
+
+	//Key array: the key of each request.
 	karray := make([]int64, *reqsNb / *rounds + *eps)
 	put := make([]bool, *reqsNb / *rounds + *eps)
 	perReplicaCount := make([]int, N)
 	test := make([]int, *reqsNb / *rounds + *eps)
 	for i := 0; i < len(rarray); i++ {
-		r := rand.Intn(N)
+		r := rand.Intn(int(N))
 		rarray[i] = r
 		if i < *reqsNb / *rounds {
 			perReplicaCount[r]++
@@ -99,14 +104,14 @@ func main() {
 		fmt.Println("Uniform distribution")
 	} else {
 		fmt.Println("Zipfian distribution:")
-		//fmt.Println(test[0:100])
+		dlog.Println("test array", test[0:100])
 	}
 
 	for i := 0; i < N; i++ {
 		var err error
 		servers[i], err = net.Dial("tcp", rlReply.ReplicaList[i])
 		if err != nil {
-			log.Printf("Error connecting to replica %d\n", i)
+			log.Printf("Error connecting to replica %d, error= %s\n", i, err.Error())
 		}
 		readers[i] = bufio.NewReader(servers[i])
 		writers[i] = bufio.NewWriter(servers[i])
@@ -114,7 +119,7 @@ func main() {
 
 	successful = make([]int, N)
 	leader := 0
-
+    //xs: get the leader id
 	if *noLeader == false {
 		reply := new(masterproto.GetLeaderReply)
 		if err = master.Call("Master.GetLeader", new(masterproto.GetLeaderArgs), reply); err != nil {
@@ -131,9 +136,10 @@ func main() {
 	before_total := time.Now()
 
 	for j := 0; j < *rounds; j++ {
-
+		//xs: number of requests of each round
 		n := *reqsNb / *rounds
 
+		//xs: this is for check of exactly once reply, an additional advanced micro-events
 		if *check {
 			rsp = make([]bool, n)
 			for j := 0; j < n; j++ {
@@ -163,9 +169,12 @@ func main() {
 			args.Command.V = state.Value(i)
 			//args.Timestamp = time.Now().UnixNano()
 			if !*fast {
+				//Default: (fast == false)
 				if *noLeader {
 					leader = rarray[i]
 				}
+				//Inherit the naming from fast paxos, client propose requests to replicas.
+
 				writers[leader].WriteByte(genericsmrproto.PROPOSE)
 				args.Marshal(writers[leader])
 			} else {

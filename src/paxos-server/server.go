@@ -1,6 +1,7 @@
 package main
 
 import (
+	"dlog"
 	"epaxos"
 	"flag"
 	"fmt"
@@ -96,6 +97,7 @@ func registerWithMaster(masterAddr string) (int, []string) {
 			err = mcli.Call("Master.Register", args, &reply)
 			if err == nil && reply.Ready == true {
 				done = true
+				dlog.Printf("Cluster init finished, my id is %d", reply.ReplicaId)
 				break
 			}
 		}

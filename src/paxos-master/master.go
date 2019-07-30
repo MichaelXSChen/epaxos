@@ -127,9 +127,9 @@ func (master *Master) Register(args *masterproto.RegisterArgs, reply *masterprot
 
 	dlog.Printf("received register request, ap = %s", addrPort)
 
-	for i, ap := range master.nodeList {
-		dlog.Printf("Current node list [%d]: %s", i, ap);
-	}
+	//for i, ap := range master.nodeList {
+	//	dlog.Printf("Current node list [%d]: %s", i, ap);
+	//}
 
 
 
@@ -154,6 +154,7 @@ func (master *Master) Register(args *masterproto.RegisterArgs, reply *masterprot
 		reply.Ready = true
 		reply.ReplicaId = index
 		reply.NodeList = master.nodeList
+		dlog.Printf("Cluster initialization ready, all node registered")
 	} else {
 		reply.Ready = false
 	}
