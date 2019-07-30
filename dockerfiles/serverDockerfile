@@ -1,0 +1,10 @@
+FROM golang:1.12.7-alpine
+
+COPY ./src /app/src
+ 
+WORKDIR /app
+
+RUN export GOPATH=/app ; \
+    go install paxos-server 
+
+ENTRYPOINT ["/app/bin/paxos-server"]
