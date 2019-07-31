@@ -59,6 +59,8 @@ type Instance struct {
 	ballot int32
 	status InstanceStatus
 	lb     *LeaderBookkeeping
+	startTime time.Time
+	commitTime time.Time
 }
 
 type LeaderBookkeeping struct {
@@ -422,7 +424,10 @@ func (r *Replica) handlePropose(propose *genericsmr.Propose) {
 			cmds,
 			r.makeUniqueBallot(0),
 			PREPARING,
-			&LeaderBookkeeping{proposals, 0, 0, 0, 0}}
+			&LeaderBookkeeping{proposals, 0, 0, 0, 0},
+			time.Now(),
+			time.Time{},
+		}
 		r.bcastPrepare(instNo, r.makeUniqueBallot(0), true)
 		dlog.Printf("Classic round for instance %d\n", instNo)
 	} else {
@@ -430,7 +435,10 @@ func (r *Replica) handlePropose(propose *genericsmr.Propose) {
 			cmds,
 			r.defaultBallot,
 			PREPARED,
-			&LeaderBookkeeping{proposals, 0, 0, 0, 0}}
+			&LeaderBookkeeping{proposals, 0, 0, 0, 0},
+			time.Now(),
+			time.Time{},
+		}
 
 		r.recordInstanceMetadata(r.instanceSpace[instNo])
 		r.recordCommands(cmds)
@@ -478,7 +486,9 @@ func (r *Replica) handleAccept(accept *paxosproto.Accept) {
 				accept.Command,
 				accept.Ballot,
 				ACCEPTED,
-				nil}
+				nil,
+				time.Time{},
+				time.Time{}}
 			areply = &paxosproto.AcceptReply{accept.Instance, TRUE, r.defaultBallot}
 		}
 	} else if inst.ballot > accept.Ballot {
@@ -524,7 +534,9 @@ func (r *Replica) handleCommit(commit *paxosproto.Commit) {
 			commit.Command,
 			commit.Ballot,
 			COMMITTED,
-			nil}
+			nil,
+			time.Time{},
+			time.Time{}}
 	} else {
 		r.instanceSpace[commit.Instance].cmds = commit.Command
 		r.instanceSpace[commit.Instance].status = COMMITTED
@@ -552,7 +564,9 @@ func (r *Replica) handleCommitShort(commit *paxosproto.CommitShort) {
 		r.instanceSpace[commit.Instance] = &Instance{nil,
 			commit.Ballot,
 			COMMITTED,
-			nil}
+			nil,
+		time.Time{},
+		time.Time{}}
 	} else {
 		r.instanceSpace[commit.Instance].status = COMMITTED
 		r.instanceSpace[commit.Instance].ballot = commit.Ballot
@@ -636,7 +650,8 @@ func (r *Replica) handleAcceptReply(areply *paxosproto.AcceptReply) {
 		if inst.lb.acceptOKs+1 > r.N>>1 {
 			inst = r.instanceSpace[areply.Instance]
 			inst.status = COMMITTED
-			dlog.Printf("Committed request %d", areply.Instance)
+			inst.commitTime = time.Now()
+			dlog.Printf("Committed request %d, time = %d ns", areply.Instance, inst.commitTime.Sub(inst.startTime).Nanoseconds())
 
 
 			if inst.lb.clientProposals != nil && !r.Dreply {
