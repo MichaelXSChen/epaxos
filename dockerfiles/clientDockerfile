@@ -1,0 +1,11 @@
+FROM golang:1.12.7-alpine
+
+COPY ./src /app/src
+ 
+WORKDIR /app
+
+RUN export GOPATH=/app ; \
+    go install paxos-client
+
+
+ENTRYPOINT ["/app/bin/paxos-client"]
