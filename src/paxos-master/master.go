@@ -21,7 +21,9 @@ type Master struct {
 	N        int
 	nodeList []string
 	addrList []string
-	portList []int
+	peerPortList []int
+	managerPortList []int
+
 	lock     *sync.Mutex
 	nodes    []*rpc.Client
 	leader   []bool
@@ -37,6 +39,7 @@ func main() {
 	master := &Master{*numNodes,
 		make([]string, 0, *numNodes),
 		make([]string, 0, *numNodes),
+		make([]int, 0, *numNodes),
 		make([]int, 0, *numNodes),
 		new(sync.Mutex),
 		make([]*rpc.Client, *numNodes),
@@ -72,10 +75,10 @@ func (master *Master) run() {
 	// connect to SMR servers
 	for i := 0; i < master.N; i++ {
 		var err error
-		addr := fmt.Sprintf("%s:%d", master.addrList[i], master.portList[i]+1000)
+		addr := fmt.Sprintf("%s:%d", master.addrList[i], master.managerPortList[i])
 		master.nodes[i], err = rpc.DialHTTP("tcp", addr)
 		if err != nil {
-			log.Fatalf("Error connecting to replica %d\n", i)
+			log.Fatalf("Error connecting to replica %d, port = %d, err = %s\n", i, master.managerPortList[i], err.Error())
 		}
 		master.leader[i] = false
 	}
@@ -123,9 +126,9 @@ func (master *Master) Register(args *masterproto.RegisterArgs, reply *masterprot
 	nlen := len(master.nodeList)
 	index := nlen
 
-	addrPort := fmt.Sprintf("%s:%d", args.Addr, args.Port)
+	addrPort := fmt.Sprintf("%s:%d", args.Addr, args.PeerPort)
 
-	dlog.Printf("received register request, ap = %s", addrPort)
+	dlog.Printf("received register request, ap = %s, manager port=%d", addrPort, args.ManagerPort)
 
 	//for i, ap := range master.nodeList {
 	//	dlog.Printf("Current node list [%d]: %s", i, ap);
@@ -145,8 +148,10 @@ func (master *Master) Register(args *masterproto.RegisterArgs, reply *masterprot
 		master.nodeList[nlen] = addrPort
 		master.addrList = master.addrList[0 : nlen+1]
 		master.addrList[nlen] = args.Addr
-		master.portList = master.portList[0 : nlen+1]
-		master.portList[nlen] = args.Port
+		master.peerPortList = master.peerPortList[0 : nlen+1]
+		master.peerPortList[nlen] = args.PeerPort
+		master.managerPortList = master.managerPortList[0 : nlen+1]
+		master.managerPortList[nlen] = args.ManagerPort
 		nlen++
 	}
 	//If all nodes registered, reply ready.

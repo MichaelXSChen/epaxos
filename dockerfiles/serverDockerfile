@@ -7,4 +7,5 @@ WORKDIR /app
 RUN export GOPATH=/app ; \
     go install paxos-server 
 
-ENTRYPOINT ["/app/bin/paxos-server"]
+EXPOSE 7070
+EXPOSE 8070

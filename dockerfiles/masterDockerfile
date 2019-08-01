@@ -7,4 +7,6 @@ WORKDIR /app
 RUN export GOPATH=/app ; \
     go install paxos-master
 
+
+EXPOSE 7087
 ENTRYPOINT ["/app/bin/paxos-master"]

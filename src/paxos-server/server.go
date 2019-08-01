@@ -22,6 +22,8 @@ import (
 
 var portnum *int = flag.Int("port", 7070, "Port # to listen on. Defaults to 7070")
 //xs: the port for RPC is 1000 larger than that of listening for requests.
+var peerExternalPort *int = flag.Int("peerEPort", -1, "External Port for peer to find this process (e.g., for port mapping of Docker), default to be the same as 'port'")
+var managerExternalPort *int = flag.Int("managerEPort", -1, "External port for manger to find this process (e.g., for port mapping of docker")
 
 var masterAddr *string = flag.String("maddr", "", "Master address. Defaults to localhost.")
 var masterPort *int = flag.Int("mport", 7087, "Master port.  Defaults to 7087.")
@@ -39,6 +41,14 @@ var durable = flag.Bool("durable", false, "Log to a stable store (i.e., a file i
 
 func main() {
 	flag.Parse()
+
+	if *peerExternalPort == -1 {
+		*peerExternalPort = *portnum
+	}
+
+	if *managerExternalPort == -1 {
+		*managerExternalPort = *portnum + 1000
+	}
 
 	runtime.GOMAXPROCS(*procs)
 
@@ -88,7 +98,7 @@ func main() {
 
 //xs:
 func registerWithMaster(masterAddr string) (int, []string) {
-	args := &masterproto.RegisterArgs{*myAddr, *portnum}
+	args := &masterproto.RegisterArgs{*myAddr, *peerExternalPort, *managerExternalPort}
 	var reply masterproto.RegisterReply
 
 	for done := false; !done; {
