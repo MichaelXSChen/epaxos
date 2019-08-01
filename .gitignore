@@ -1,3 +1,4 @@
 **/*.log
 **/stable-store-*
 bin/*
+logs/*

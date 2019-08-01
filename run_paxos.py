@@ -1,5 +1,5 @@
 import docker
-
+import time
 
 dockerClient = docker.from_env()
 
@@ -16,7 +16,7 @@ master_port = master_container.attrs['NetworkSettings']['Ports']['7087/tcp'][0][
 
 print("master_ip ", master_ip)
 print("master_port", master_port)
-
+print("master container id", master_container.id)
 N = 3
 #Setup the server containers 
 server_containers = [] 
@@ -47,12 +47,20 @@ for i in range(N):
     print ("started server container %d, ip = %s, peer_port = %s, manager_ports = %s" % (i, ip, peer_port, manager_port)) 
 
 
-    command = 'sh -c \'/app/bin/paxos-server -maddr %s -mport %s -addr %s -peerEPort %s -managerEPort %s >/logs/server%d.log 2>&1\'' % (master_ip, master_port, ip, peer_port, manager_port, i)
+    command = 'sh -c \'/app/bin/paxos-server -maddr %s -mport %s -addr %s -peerEPort %s -managerEPort %s >/logs/server%d.log 2>&1\'' % (master_ip, 7087, ip, 7070, 8070, i)
     print("Exec command is [%s]" % command)
     ret = cont.exec_run(cmd = command,
         stdout = False, 
         stderr = False, 
         detach = True) 
-    print(ret)
+
+time.sleep(10)
+
+client = dockerClient.containers.run(image='pclient', 
+    detach = True, 
+    command= '/app/bin/paxos-client -maddr %s -mport %s' % (master_ip, 7087))
+client.reload()
+print(client.id)
+print("started client")
 
 # master_container.kill() 

@@ -101,6 +101,8 @@ func registerWithMaster(masterAddr string) (int, []string) {
 	args := &masterproto.RegisterArgs{*myAddr, *peerExternalPort, *managerExternalPort}
 	var reply masterproto.RegisterReply
 
+	dlog.Printf("registering with master, masterAddr = %s, my_ip = %s, peerPort = %d, managerPort = %d", masterAddr, *myAddr, *peerExternalPort, *managerExternalPort)
+
 	for done := false; !done; {
 		mcli, err := rpc.DialHTTP("tcp", masterAddr)
 		if err == nil {
@@ -110,6 +112,8 @@ func registerWithMaster(masterAddr string) (int, []string) {
 				dlog.Printf("Cluster init finished, my id is %d", reply.ReplicaId)
 				break
 			}
+		}else{
+			log.Printf("failed to register with master, err = %s", err.Error())
 		}
 		time.Sleep(1e9)
 	}
