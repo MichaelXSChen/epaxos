@@ -30,6 +30,7 @@ for i in range(N):
     ports={7070:None, 8070:None}, 
     tty = True, 
     command =  'sh', 
+    cap_add = ['NET_ADMIN'],
     volumes = {'/home/xusheng/codes/epaxos/logs': {'bind': '/logs', 'mode':'rw'}})
 
     server_containers.append(cont)
@@ -45,6 +46,10 @@ for i in range(N):
     manager_ports.append(manager_port)
     
     print ("started server container %d, ip = %s, peer_port = %s, manager_ports = %s" % (i, ip, peer_port, manager_port)) 
+
+    tc_command = 'tc qdisc add dev eth0 root netem delay 100ms'
+    ret = cont.exec_run(cmd = tc_command)
+    print(ret)
 
 
     command = 'sh -c \'/app/bin/paxos-server -maddr %s -mport %s -addr %s -peerEPort %s -managerEPort %s >/logs/server%d.log 2>&1\'' % (master_ip, 7087, ip, 7070, 8070, i)

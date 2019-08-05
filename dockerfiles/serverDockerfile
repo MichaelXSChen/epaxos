@@ -4,6 +4,8 @@ COPY ./src /app/src
  
 WORKDIR /app
 
+RUN apk add iproute2
+
 RUN export GOPATH=/app ; \
     go install paxos-server 
 
