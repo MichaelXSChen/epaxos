@@ -52,7 +52,7 @@ for i in range(N):
     print(ret)
 
 
-    command = 'sh -c \'/app/bin/paxos-server -maddr %s -mport %s -addr %s -peerEPort %s -managerEPort %s -m true >/logs/server%d.log 2>&1\'' % (master_ip, 7087, ip, 7070, 8070, i)
+    command = 'sh -c \'/app/bin/paxos-server -maddr %s -mport %s -addr %s -peerEPort %s -managerEPort %s -m >/logs/server%d.log 2>&1\'' % (master_ip, 7087, ip, 7070, 8070, i)
     print("Exec command is [%s]" % command)
     ret = cont.exec_run(cmd = command,
         stdout = False, 
@@ -63,7 +63,10 @@ time.sleep(10)
 
 client = dockerClient.containers.run(image='pclient', 
     detach = True, 
-    command= '/app/bin/paxos-client -maddr %s -mport %s -e true' % (master_ip, 7087))
+    # command= '/app/bin/paxos-client -maddr %s -mport %s -e -r 2000 -q 6000' % (master_ip, 7087)
+    # 
+    command =  '/app/bin/paxos-client -maddr %s -mport %s -r 2000 -q 2000' % (master_ip, 7087)
+    )
 client.reload()
 print(client.id)
 print("started client")

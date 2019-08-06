@@ -20,6 +20,7 @@ var masterAddr *string = flag.String("maddr", "", "Master address. Defaults to l
 var masterPort *int = flag.Int("mport", 7087, "Master port.  Defaults to 7077.")
 var reqsNb *int = flag.Int("q", 5000, "Total number of requests. Defaults to 5000.")
 var writes *int = flag.Int("w", 100, "Percentage of updates (writes). Defaults to 100%.")
+// if true, will send to all replicas; otherwise, send only to the leader.
 var noLeader *bool = flag.Bool("e", false, "Egalitarian (no leader). Defaults to false.")
 var fast *bool = flag.Bool("f", false, "Fast Paxos: send message directly to all replicas. Defaults to false.")
 var rounds *int = flag.Int("r", 1, "Split the total number of requests into this many rounds, and do rounds sequentially. Defaults to 1.")
@@ -67,6 +68,8 @@ func main() {
 	readers := make([]*bufio.Reader, N)
 	writers := make([]*bufio.Writer, N)
 
+	dlog.Printf("Got the replica list of len %d ", N)
+
 	//Replica arrary: each round of request send to which replica.
 	rarray = make([]int, *reqsNb / *rounds + *eps)
 
@@ -75,8 +78,11 @@ func main() {
 	put := make([]bool, *reqsNb / *rounds + *eps)
 	perReplicaCount := make([]int, N)
 	test := make([]int, *reqsNb / *rounds + *eps)
+
+	rand.Seed(time.Now().UnixNano())
+
 	for i := 0; i < len(rarray); i++ {
-		r := rand.Intn(int(N))
+		r := rand.Intn(N)
 		rarray[i] = r
 		if i < *reqsNb / *rounds {
 			perReplicaCount[r]++
@@ -104,7 +110,7 @@ func main() {
 		fmt.Println("Uniform distribution")
 	} else {
 		fmt.Println("Zipfian distribution:")
-		dlog.Println("test array", test[0:100])
+		//dlog.Println("test array", test[0:100])
 	}
 
 	for i := 0; i < N; i++ {
@@ -158,7 +164,7 @@ func main() {
 		before := time.Now()
 
 		for i := 0; i < n+*eps; i++ {
-			dlog.Printf("Sending proposal %d\n", id)
+			//dlog.Printf("Sending proposal %d\n", id)
 			args.CommandId = id
 			if put[i] {
 				args.Command.Op = state.PUT
@@ -175,6 +181,7 @@ func main() {
 				}
 				//Inherit the naming from fast paxos, client propose requests to replicas.
 
+				dlog.Printf("sending proposal #%d to replica %d", id, leader )
 				writers[leader].WriteByte(genericsmrproto.PROPOSE)
 				args.Marshal(writers[leader])
 			} else {
