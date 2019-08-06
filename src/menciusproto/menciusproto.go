@@ -31,7 +31,9 @@ type Accept struct {
 	Ballot            int32
 	Skip              uint8
 	NbInstancesToSkip int32
+	StartTime		  int64
 	Command           state.Command
+
 }
 
 type AcceptReply struct {

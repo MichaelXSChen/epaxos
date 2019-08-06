@@ -70,6 +70,10 @@ type Instance struct {
 	ballot        int32
 	status        InstanceStatus
 	lb            *LeaderBookkeeping
+	//xs: instance for
+	startTime time.Time
+	readyTime time.Time
+	commitTime time.Time
 }
 
 type LeaderBookkeeping struct {
@@ -344,11 +348,13 @@ func (r *Replica) bcastAccept(instance int32, ballot int32, skip uint8, nbInstTo
 	ma.Skip = skip
 	ma.NbInstancesToSkip = nbInstToSkip
 	ma.Command = command
+	ma.StartTime = time.Now().UnixNano()
 	args := &ma
 	//args := &menciusproto.Accept{r.Id, instance, ballot, skip, nbInstToSkip, command}
 
 	n := r.N - 1
 	q := r.Id
+
 
 	sent := 0
 	for sent < n {
@@ -436,11 +442,16 @@ func (r *Replica) handlePropose(propose *genericsmr.Propose) {
 		&propose.Command,
 		r.makeBallotLargerThan(0),
 		ACCEPTED,
-		&LeaderBookkeeping{propose, 0, 0, 0, 0}}
+		&LeaderBookkeeping{propose, 0, 0, 0, 0},
+		time.Now(),
+		time.Time{},
+	time.Time{}}
 
 	r.recordInstanceMetadata(r.instanceSpace[instNo])
 	r.recordCommand(&propose.Command)
 	r.sync()
+
+
 
 	r.bcastAccept(instNo, r.instanceSpace[instNo].ballot, FALSE, 0, propose.Command)
 	dlog.Printf("Choosing req. %d in instance %d\n", propose.CommandId, instNo)
@@ -452,7 +463,10 @@ func (r *Replica) handleSkip(skip *menciusproto.Skip) {
 		nil,
 		0,
 		COMMITTED,
-		nil}
+		nil,
+		time.Time{},
+		time.Time{},
+	time.Time{}}
 	r.updateBlocking(skip.StartInstance)
 }
 
@@ -473,7 +487,10 @@ func (r *Replica) handlePrepare(prepare *menciusproto.Prepare) {
 			nil,
 			prepare.Ballot,
 			PREPARING,
-			nil}
+			nil,
+		time.Time{},
+		time.Time{},
+		time.Time{}}
 	} else {
 		ok := TRUE
 		if prepare.Ballot < inst.ballot {
@@ -504,6 +521,15 @@ func (r *Replica) handleAccept(accept *menciusproto.Accept) {
 	flush := true
 	inst := r.instanceSpace[accept.Instance]
 
+	start_time := time.Now()
+
+	dlog.Printf("Time between sending out Accept and Recv = %d us", (time.Now().UnixNano() - accept.StartTime) / 1000.0)
+
+	defer func(){
+		dlog.Printf("Handle Accept time %d us", time.Since(start_time).Nanoseconds() / 1000)
+	}()
+
+
 	if inst != nil && inst.ballot > accept.Ballot {
 		r.replyAccept(accept.LeaderId, &menciusproto.AcceptReply{accept.Instance, FALSE, inst.ballot, -1, -1})
 		return
@@ -529,7 +555,10 @@ func (r *Replica) handleAccept(accept *menciusproto.Accept) {
 			nil,
 			-1,
 			COMMITTED,
-			nil}
+			nil,
+			time.Time{},
+			time.Time{},
+		time.Time{}}
 
 		r.recordInstanceMetadata(r.instanceSpace[r.crtInstance])
 		r.sync()
@@ -546,7 +575,10 @@ func (r *Replica) handleAccept(accept *menciusproto.Accept) {
 			&accept.Command,
 			accept.Ballot,
 			ACCEPTED,
-			nil}
+			nil,
+			time.Time{},
+			time.Time{},
+		time.Time{}}
 		r.recordInstanceMetadata(r.instanceSpace[accept.Instance])
 		r.recordCommand(&accept.Command)
 		r.sync()
@@ -613,7 +645,10 @@ func (r *Replica) handleCommit(commit *menciusproto.Commit) {
 			nil, //&commit.Command,
 			0,
 			COMMITTED,
-			nil}
+			nil,
+		time.Time{},
+			time.Time{},
+			time.Time{}}
 	} else {
 		//inst.command = &commit.Command
 		inst.status = COMMITTED
@@ -702,7 +737,10 @@ func (r *Replica) handleAcceptReply(areply *menciusproto.AcceptReply) {
 				nil,
 				0,
 				COMMITTED,
-				nil}
+				nil,
+			time.Time{},
+				time.Time{},
+				time.Time{}}
 			r.updateBlocking(areply.SkippedStartInstance)
 		}
 
@@ -716,8 +754,12 @@ func (r *Replica) handleAcceptReply(areply *menciusproto.AcceptReply) {
 				//TODO what if
 			}
 			inst.status = READY
+			inst.readyTime = time.Now()
+
 			if !inst.skipped && areply.Instance > r.latestInstReady {
 				r.latestInstReady = areply.Instance
+
+
 			}
 			r.updateBlocking(areply.Instance)
 		}
@@ -765,6 +807,10 @@ func (r *Replica) updateBlocking(instance int32) {
 			if inst.status == READY {
 				//commit my instance
 				dlog.Printf("Am about to commit instance %d\n", r.blockingInstance)
+
+				inst.commitTime = time.Now()
+
+				dlog.Printf("Commiting instance %d, ready time = %d us, dealy time = %d us, total time = %d us", r.blockingInstance, inst.readyTime.Sub(inst.startTime).Nanoseconds() / 1000.0, inst.commitTime.Sub(inst.readyTime).Nanoseconds() / 1000.0, inst.commitTime.Sub(inst.startTime).Nanoseconds() / 1000.0)
 
 				inst.status = COMMITTED
 				if inst.lb.clientProposal != nil && !r.Dreply {
@@ -888,7 +934,10 @@ func (r *Replica) forceCommit() {
 				&state.Command{state.NONE, 0, 0},
 				r.makeUniqueBallot(1),
 				PREPARING,
-				&LeaderBookkeeping{nil, 0, 0, 0, 0}}
+				&LeaderBookkeeping{nil, 0, 0, 0, 0},
+			time.Time{},
+				time.Time{},
+				time.Time{}}
 			r.bcastPrepare(problemInstance, r.instanceSpace[problemInstance].ballot)
 		} else {
 			log.Println("Not nil")

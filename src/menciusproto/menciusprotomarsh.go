@@ -262,9 +262,9 @@ func (p *AcceptCache) Put(t *Accept) {
 	p.mu.Unlock()
 }
 func (t *Accept) Marshal(wire io.Writer) {
-	var b [17]byte
+	var b [25]byte
 	var bs []byte
-	bs = b[:17]
+	bs = b[:25]
 	tmp32 := t.LeaderId
 	bs[0] = byte(tmp32)
 	bs[1] = byte(tmp32 >> 8)
@@ -286,15 +286,21 @@ func (t *Accept) Marshal(wire io.Writer) {
 	bs[14] = byte(tmp32 >> 8)
 	bs[15] = byte(tmp32 >> 16)
 	bs[16] = byte(tmp32 >> 24)
+
+	tmp64 := t.StartTime
+	for i := 0; i<8; i++{
+		bs[17+i] = byte(tmp64 >> uint(8 * i))
+	}
+
 	wire.Write(bs)
 	t.Command.Marshal(wire)
 }
 
 func (t *Accept) Unmarshal(wire io.Reader) error {
-	var b [17]byte
+	var b [25]byte
 	var bs []byte
-	bs = b[:17]
-	if _, err := io.ReadAtLeast(wire, bs, 17); err != nil {
+	bs = b[:25]
+	if _, err := io.ReadAtLeast(wire, bs, 25); err != nil {
 		return err
 	}
 	t.LeaderId = int32((uint32(bs[0]) | (uint32(bs[1]) << 8) | (uint32(bs[2]) << 16) | (uint32(bs[3]) << 24)))
@@ -302,6 +308,9 @@ func (t *Accept) Unmarshal(wire io.Reader) error {
 	t.Ballot = int32((uint32(bs[8]) | (uint32(bs[9]) << 8) | (uint32(bs[10]) << 16) | (uint32(bs[11]) << 24)))
 	t.Skip = uint8(bs[12])
 	t.NbInstancesToSkip = int32((uint32(bs[13]) | (uint32(bs[14]) << 8) | (uint32(bs[15]) << 16) | (uint32(bs[16]) << 24)))
+
+	t.StartTime = int64(uint64(bs[17]) | uint64(bs[18]) << 8 |  uint64(bs[19]) << 16 |  uint64(bs[20]) << 24 |  uint64(bs[21]) << 32 | uint64(bs[22]) << 40 | uint64(bs[23]) << 48 |
+		uint64(bs[24]) << 56)
 	t.Command.Unmarshal(wire)
 	return nil
 }
