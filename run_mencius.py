@@ -10,11 +10,15 @@ parallel_instances = 3 # number of on-going reqs for client (i.e., similar to nu
 leader_only = False  
 
 
-latencies = [[0, 100, 150],
-             [100, 0, 200],
-             [150, 200, 0]]
 
+# latencies = [[0, 100, 150],
+#              [100, 0, 200],
+#              [150, 200, 0]]
 
+# AU, JP, UE
+latencies = [[0, 52, 115],
+             [52, 0, 75],
+             [115, 75, 0]]
 dockerClient = docker.from_env()
 
 
