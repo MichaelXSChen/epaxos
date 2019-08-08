@@ -17,6 +17,8 @@ for f in glob.glob("*.log"):
     files.append( os.path.join(log_dir, 'out%s.out'%f) )
 
 
+file = open(os.path.join(log_dir, 'result.txt'), 'w+')
+
 
 for f in files: 
     df = pd.read_csv(f, names=['commit', 'delay', 'total'], header=None, delimiter=' ')
@@ -42,3 +44,11 @@ for f in files:
     print('mean  %0.2fms  %0.2fms  %0.2fms'% (commit_mean/1000, delay_mean/1000, total_mean/1000))
     print('max   %0.2fms  %0.2fms  %0.2fms'% (commit_max/1000, delay_max/1000, total_max/1000))
     print('std   %0.2f    %0.2f    %0.2f  '% (commit_std, delay_std, total_std))
+
+    file.write('\n\n%s\n' % f)
+    file.write('      commmit   delay   total\n')
+    file.write('mean  %0.2fms  %0.2fms  %0.2fms\n'% (commit_mean/1000, delay_mean/1000, total_mean/1000))
+    file.write('max   %0.2fms  %0.2fms  %0.2fms\n'% (commit_max/1000, delay_max/1000, total_max/1000))
+    file.write('std   %0.2f    %0.2f    %0.2f  \n'% (commit_std, delay_std, total_std))
+
+file.close()

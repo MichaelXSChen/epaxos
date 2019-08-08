@@ -1,0 +1,21 @@
+
+
+/home/xusheng/codes/epaxos/eval/mencius/AU-JP-UE-12req-per-round/outserver0.log.out
+      commmit   delay   total
+mean  104.50ms  8.24ms  112.75ms
+max   106.03ms  62.18ms  166.87ms
+std   238.95    5154.81    5172.13  
+
+
+/home/xusheng/codes/epaxos/eval/mencius/AU-JP-UE-12req-per-round/outserver1.log.out
+      commmit   delay   total
+mean  104.56ms  0.01ms  104.57ms
+max   105.45ms  0.10ms  105.47ms
+std   279.44    8.09    283.96  
+
+
+/home/xusheng/codes/epaxos/eval/mencius/AU-JP-UE-12req-per-round/outserver2.log.out
+      commmit   delay   total
+mean  150.53ms  0.01ms  150.54ms
+max   151.67ms  0.15ms  151.68ms
+std   279.89    9.35    284.35  
