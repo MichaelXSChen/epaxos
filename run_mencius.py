@@ -6,7 +6,7 @@ PING_test = True # whether to do ping test
 
 N = 3 # number of replicas
 n_reqs = 6000 # number of requests
-parallel_instances = 3 # number of on-going reqs for client (i.e., similar to number of connections, but bound to same TCP connection)
+parallel_instances = 12 # number of on-going reqs for client (i.e., similar to number of connections, but bound to same TCP connection)
 leader_only = False  
 
 
@@ -72,9 +72,9 @@ for i in range(N):
 
 tc_commands = []
 
-print ('\nSleep for 10 secs\n')
+print ('\nSleep for 1 secs\n')
 
-time.sleep(10)
+time.sleep(1)
 
 print ('\n\n\n\n*****SETTING TC for server containers*****')
 for i in range(N):
@@ -125,6 +125,10 @@ for i in range (N):
         stdout = False, 
         stderr = False, 
         detach = True) 
+
+print ('\nSleep for 10 secs\n')
+
+time.sleep(10)
 
 
 

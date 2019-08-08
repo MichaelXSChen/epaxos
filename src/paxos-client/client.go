@@ -82,7 +82,12 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	for i := 0; i < len(rarray); i++ {
-		r := rand.Intn(N)
+		var r int
+		if len(rarray) <= 5 * N {
+		   r = i % N	
+		}else{
+			r = rand.Intn(N) 
+		}
 		rarray[i] = r
 		if i < *reqsNb / *rounds {
 			perReplicaCount[r]++
