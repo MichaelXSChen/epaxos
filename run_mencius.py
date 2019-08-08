@@ -6,10 +6,10 @@ PING_test = True # whether to do ping test
 
 N = 3 # number of replicas
 n_reqs = 6000 # number of requests
-parallel_instances = 12 # number of on-going reqs for client (i.e., similar to number of connections, but bound to same TCP connection)
+parallel_instances = 15 # number of on-going reqs for client (i.e., similar to number of connections, but bound to same TCP connection)
 leader_only = False  
 
-
+N_Client = 50
 
 # latencies = [[0, 100, 150],
 #              [100, 0, 200],
@@ -132,20 +132,22 @@ time.sleep(10)
 
 
 
-print('\n\n\n\n******Starting Client*****')
+print('\n\n\n\n******Starting %d Clients*****' % N_Client)
+
+for c in range(N_Client):
+    if leader_only :
+        client_cmd = '/app/bin/paxos-client -maddr %s -mport %s -r %d -q %d' % (master_ip, 7087, n_reqs//parallel_instances, n_reqs)
+    else:
+        client_cmd = '/app/bin/paxos-client -maddr %s -mport %s -e -r %d -q %d' % (master_ip, 7087, n_reqs//parallel_instances, n_reqs)
+
+    client = dockerClient.containers.run(image='pclient', 
+        detach = True,
+        command = client_cmd
+        )
+    client.reload()
+    print(client.id)
 
 
-if leader_only :
-    client_cmd = '/app/bin/paxos-client -maddr %s -mport %s -r %d -q %d' % (master_ip, 7087, n_reqs//parallel_instances, n_reqs)
-else:
-    client_cmd = '/app/bin/paxos-client -maddr %s -mport %s -e -r %d -q %d' % (master_ip, 7087, n_reqs//parallel_instances, n_reqs)
-
-client = dockerClient.containers.run(image='pclient', 
-    detach = True,
-    command = client_cmd
-    )
-client.reload()
-print(client.id)
-print("started client")
+print("started %d client" % N_Client)
 
 # master_container.kill() 
