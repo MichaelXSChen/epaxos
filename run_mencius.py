@@ -4,12 +4,12 @@ import time
 
 PING_test = True # whether to do ping test
 
-N = 3 # number of replicas
+N = 5 # number of replicas
 n_reqs = 6000 # number of requests
 parallel_instances = 15 # number of on-going reqs for client (i.e., similar to number of connections, but bound to same TCP connection)
 leader_only = False  
 
-N_Client = 50
+N_Client = 100
 
 # latencies = [[0, 100, 150],
 #              [100, 0, 200],
@@ -19,6 +19,15 @@ N_Client = 50
 latencies = [[0, 52, 115],
              [52, 0, 75],
              [115, 75, 0]]
+
+
+# UE UW IR JP AU
+latencies = [[0, 35, 38, 75, 115],
+             [35, 0, 72, 51, 78],
+             [38, 72, 0, 119, 152], 
+             [75, 51, 119, 0, 52], 
+             [115, 78, 152, 52, 0]]
+
 dockerClient = docker.from_env()
 
 
@@ -26,6 +35,7 @@ dockerClient = docker.from_env()
 print("*****STARTING master (manager) container*****")
 # Setup the master container
 master_container = dockerClient.containers.run(image= "pmaster", 
+            command = '-N %d' % N,
             detach=True,
             ports={7087: None})
 
@@ -113,7 +123,13 @@ if PING_test:
         for j in range(N):
             ping_cmd = 'ping -c 3 -i 0.2 %s' % (server_ips[j])
             ret = server_containers[i].exec_run(cmd = ping_cmd)
-            print('Ping result from server %d to server %d:' % (i, j), ret.output)
+
+            outstr = str(ret.output)
+            strs = outstr.split('/')
+            ping_latency = strs[len(strs) - 2 ]
+            
+            print('Ping result from server %d to server %d: %sms' % (i, j, ping_latency))
+        print('\n')
 
 
 print ('\n\n\n\n*****Starting Mencius server in server containers*****')
