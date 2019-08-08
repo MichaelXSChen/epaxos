@@ -1,0 +1,21 @@
+
+
+/home/xusheng/codes/epaxos/logs/outserver0.log.out
+      commmit   delay   total
+mean  104.67ms  12.62ms  117.29ms
+max   230.54ms  89.84ms  246.53ms
+std   4987.57    8074.32    9082.50  
+
+
+/home/xusheng/codes/epaxos/logs/outserver1.log.out
+      commmit   delay   total
+mean  105.10ms  0.00ms  105.10ms
+max   349.25ms  7.30ms  349.26ms
+std   10905.11    28.11    10905.36  
+
+
+/home/xusheng/codes/epaxos/logs/outserver2.log.out
+      commmit   delay   total
+mean  151.14ms  0.02ms  151.17ms
+max   325.13ms  56.50ms  325.13ms
+std   6718.60    908.78    6939.06  
